@@ -1,16 +1,9 @@
-# shortcuts_intents_actions
+# Shortcuts / Intents / Actions example
 
-A new Flutter project.
+An example of using the [Shortcuts](https://api.flutter.dev/flutter/widgets/Shortcuts-class.html), [Intent](https://api.flutter.dev/flutter/widgets/Intent-class.html)s, and [Actions](https://api.flutter.dev/flutter/widgets/Actions-class.html) system.
 
-## Getting Started
+This was adapted from a talk given at Flutter Vikings 2022 ([original code](https://github.com/justinmc/flutter_shortcut_intent_action_talk)).
 
-This project is a starting point for a Flutter application.
+<img src="assets/screenshot.png" />
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+<img src="assets/paint_screenshot.png" />
