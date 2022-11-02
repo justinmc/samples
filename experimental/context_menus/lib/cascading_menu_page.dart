@@ -28,19 +28,86 @@ enum MenuEntry {
   final MenuSerializableShortcut? shortcut;
 }
 
-class MyContextMenu extends StatefulWidget {
-  const MyContextMenu({super.key, required this.message});
+class CascadingMenuPage extends StatelessWidget {
+  CascadingMenuPage({
+    super.key,
+    required this.onChangedPlatform,
+  });
 
-  final String message;
+  static const String kMessage = '"Talk less. Smile more." - A. Burr';
+  static const String route = 'cascading-menu';
+  static const String title = 'Cascading Menu Example';
+  static const String subtitle = 'Shows how to create a context menu with submenus.';
+
+  final PlatformCallback onChangedPlatform;
+
+  static const String url = '$kCodeUrl/cascading_menu_page.dart';
+
+  final TextEditingController _controller = TextEditingController(
+    text: 'asdf asdf asdf sadf sadf asdf asdfasdf adsf',
+  );
+  final FocusNode _buttonFocusNode = FocusNode();
 
   @override
-  State<MyContextMenu> createState() => _MyContextMenuState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(CascadingMenuPage.title),
+        actions: <Widget>[
+          PlatformSelector(
+            onChangedPlatform: onChangedPlatform,
+          ),
+          IconButton(
+            icon: const Icon(Icons.code),
+            onPressed: () async {
+              if (!await launchUrl(Uri.parse(url))) {
+                throw 'Could not launch $url';
+              }
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: Column(
+          children: <Widget>[
+            TextField(
+              controller: _controller,
+              contextMenuBuilder: (BuildContext context, EditableTextState editableTextState) {
+                return MyCascadingMenu(
+                  menuPosition: editableTextState.contextMenuAnchors.primaryAnchor,
+                );
+              },
+            ),
+            TextFieldTapRegion(
+              child: TextButton(
+                focusNode: _buttonFocusNode,
+                onPressed: () {
+                  //_buttonFocusNode.requestFocus();
+                },
+                child: const Text("Button that doesn't steal focus"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _MyContextMenuState extends State<MyContextMenu> {
-  MenuEntry? _lastSelection;
-  final FocusNode _buttonFocusNode = FocusNode(debugLabel: 'Menu Button');
-  final MenuController _menuController = MenuController();
+// TODO(justinmc): Rename to MyCascadingTextSelectionToolbar
+class MyCascadingMenu extends StatefulWidget {
+  const MyCascadingMenu({
+    super.key,
+    required this.menuPosition,
+  });
+
+  final Offset menuPosition;
+
+  @override
+  State<MyCascadingMenu> createState() => _MyCascadingMenuState();
+}
+
+class _MyCascadingMenuState extends State<MyCascadingMenu> {
   ShortcutRegistryEntry? _shortcutsEntry;
 
   Color get backgroundColor => _backgroundColor;
@@ -63,159 +130,7 @@ class _MyContextMenuState extends State<MyContextMenu> {
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Dispose of any previously registered shortcuts, since they are about to
-    // be replaced.
-    _shortcutsEntry?.dispose();
-    // Collect the shortcuts from the different menu selections so that they can
-    // be registered to apply to the entire app. Menus don't register their
-    // shortcuts, they only display the shortcut hint text.
-    final Map<ShortcutActivator, Intent> shortcuts =
-        <ShortcutActivator, Intent>{
-      for (final MenuEntry item in MenuEntry.values)
-        if (item.shortcut != null)
-          item.shortcut!: VoidCallbackIntent(() => _activate(item)),
-    };
-    // Register the shortcuts with the ShortcutRegistry so that they are
-    // available to the entire application.
-    _shortcutsEntry = ShortcutRegistry.of(context).addAll(shortcuts);
-  }
-
-  @override
-  void dispose() {
-    _shortcutsEntry?.dispose();
-    _buttonFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: CascadingMenu(
-        menuPosition: Offset.zero,
-        alignmentOffset: Offset.zero,
-        clipBehavior: Clip.none,
-        orientation: Axis.vertical,
-        menuChildren: <Widget>[
-          MenuItemButton(
-            child: Text(MenuEntry.about.label),
-            onPressed: () => _activate(MenuEntry.about),
-          ),
-          if (_showingMessage)
-            MenuItemButton(
-              onPressed: () => _activate(MenuEntry.hideMessage),
-              shortcut: MenuEntry.hideMessage.shortcut,
-              child: Text(MenuEntry.hideMessage.label),
-            ),
-          if (!_showingMessage)
-            MenuItemButton(
-              onPressed: () => _activate(MenuEntry.showMessage),
-              shortcut: MenuEntry.showMessage.shortcut,
-              child: Text(MenuEntry.showMessage.label),
-            ),
-          SubmenuButton(
-            menuChildren: <Widget>[
-              MenuItemButton(
-                onPressed: () => _activate(MenuEntry.colorRed),
-                shortcut: MenuEntry.colorRed.shortcut,
-                child: Text(MenuEntry.colorRed.label),
-              ),
-              MenuItemButton(
-                onPressed: () => _activate(MenuEntry.colorGreen),
-                shortcut: MenuEntry.colorGreen.shortcut,
-                child: Text(MenuEntry.colorGreen.label),
-              ),
-              MenuItemButton(
-                onPressed: () => _activate(MenuEntry.colorBlue),
-                shortcut: MenuEntry.colorBlue.shortcut,
-                child: Text(MenuEntry.colorBlue.label),
-              ),
-            ],
-            child: const Text('Background Color'),
-          ),
-        ],
-      ),
-    );
-    return Padding(
-      padding: const EdgeInsets.all(50),
-      child: GestureDetector(
-        onTapDown: _handleTapDown,
-        child: MenuAnchor(
-          controller: _menuController,
-          anchorTapClosesMenu: true,
-          menuChildren: <Widget>[
-            MenuItemButton(
-              child: Text(MenuEntry.about.label),
-              onPressed: () => _activate(MenuEntry.about),
-            ),
-            if (_showingMessage)
-              MenuItemButton(
-                onPressed: () => _activate(MenuEntry.hideMessage),
-                shortcut: MenuEntry.hideMessage.shortcut,
-                child: Text(MenuEntry.hideMessage.label),
-              ),
-            if (!_showingMessage)
-              MenuItemButton(
-                onPressed: () => _activate(MenuEntry.showMessage),
-                shortcut: MenuEntry.showMessage.shortcut,
-                child: Text(MenuEntry.showMessage.label),
-              ),
-            SubmenuButton(
-              menuChildren: <Widget>[
-                MenuItemButton(
-                  onPressed: () => _activate(MenuEntry.colorRed),
-                  shortcut: MenuEntry.colorRed.shortcut,
-                  child: Text(MenuEntry.colorRed.label),
-                ),
-                MenuItemButton(
-                  onPressed: () => _activate(MenuEntry.colorGreen),
-                  shortcut: MenuEntry.colorGreen.shortcut,
-                  child: Text(MenuEntry.colorGreen.label),
-                ),
-                MenuItemButton(
-                  onPressed: () => _activate(MenuEntry.colorBlue),
-                  shortcut: MenuEntry.colorBlue.shortcut,
-                  child: Text(MenuEntry.colorBlue.label),
-                ),
-              ],
-              child: const Text('Background Color'),
-            ),
-          ],
-          child: Container(
-            alignment: Alignment.center,
-            color: backgroundColor,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text(
-                      'Ctrl-click anywhere on the background to show the menu.'),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Text(
-                    showingMessage ? widget.message : '',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                ),
-                Text(_lastSelection != null
-                    ? 'Last Selected: ${_lastSelection!.label}'
-                    : ''),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _activate(MenuEntry selection) {
-    setState(() {
-      _lastSelection = selection;
-    });
     switch (selection) {
       case MenuEntry.about:
         showAboutDialog(
@@ -242,56 +157,176 @@ class _MyContextMenuState extends State<MyContextMenu> {
     }
   }
 
-  void _handleTapDown(TapDownDetails details) {
-    if (!HardwareKeyboard.instance.logicalKeysPressed
-            .contains(LogicalKeyboardKey.controlLeft) &&
-        !HardwareKeyboard.instance.logicalKeysPressed
-            .contains(LogicalKeyboardKey.controlRight)) {
-      return;
-    }
-    _menuController.open(position: details.localPosition);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Dispose of any previously registered shortcuts, since they are about to
+    // be replaced.
+    _shortcutsEntry?.dispose();
+    // Collect the shortcuts from the different menu selections so that they can
+    // be registered to apply to the entire app. Menus don't register their
+    // shortcuts, they only display the shortcut hint text.
+    final Map<ShortcutActivator, Intent> shortcuts =
+        <ShortcutActivator, Intent>{
+      for (final MenuEntry item in MenuEntry.values)
+        if (item.shortcut != null)
+          item.shortcut!: VoidCallbackIntent(() => _activate(item)),
+    };
+    // Register the shortcuts with the ShortcutRegistry so that they are
+    // available to the entire application.
+    _shortcutsEntry = ShortcutRegistry.of(context).addAll(shortcuts);
   }
-}
 
-class CascadingMenuPage extends StatelessWidget {
-  const CascadingMenuPage({
-    super.key,
-    required this.onChangedPlatform,
-  });
-
-  static const String kMessage = '"Talk less. Smile more." - A. Burr';
-  static const String route = 'cascading-menu';
-  static const String title = 'Cascading Menu Example';
-  static const String subtitle = 'Shows how to create a context menu with submenus.';
-
-  final PlatformCallback onChangedPlatform;
-
-  static const String url = '$kCodeUrl/cascading_menu_page.dart';
+  @override
+  void dispose() {
+    _shortcutsEntry?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(CascadingMenuPage.title),
-        actions: <Widget>[
-          PlatformSelector(
-            onChangedPlatform: onChangedPlatform,
+    return MenuPanel(
+      // TODO(justinmc): This should be totally optional.
+      menuStyle: null,
+      //menuPosition: widget.menuPosition,
+      orientation: Axis.vertical,
+      //tapRegionGroupId: EditableText,
+      children: <Widget>[
+        //Container(width: 100, height: 100, color: Colors.orange),
+        MenuItemButton(
+          child: Text(MenuEntry.about.label),
+          onPressed: () => _activate(MenuEntry.about),
+        ),
+        /*
+        if (_showingMessage)
+          MenuItemButton(
+            onPressed: () => _activate(MenuEntry.hideMessage),
+            shortcut: MenuEntry.hideMessage.shortcut,
+            child: Text(MenuEntry.hideMessage.label),
           ),
-          IconButton(
-            icon: const Icon(Icons.code),
-            onPressed: () async {
-              if (!await launchUrl(Uri.parse(url))) {
-                throw 'Could not launch $url';
-              }
-            },
+        if (!_showingMessage)
+        */
+          MenuItemButton(
+            onPressed: () => _activate(MenuEntry.showMessage),
+            shortcut: MenuEntry.showMessage.shortcut,
+            child: Text(MenuEntry.showMessage.label),
           ),
-        ],
-      ),
-      body: const MyContextMenu(message: kMessage),
+        SubmenuButton(
+          menuChildren: <Widget>[
+            MenuItemButton(
+              onPressed: () => _activate(MenuEntry.colorRed),
+              shortcut: MenuEntry.colorRed.shortcut,
+              child: Text(MenuEntry.colorRed.label),
+            ),
+            MenuItemButton(
+              onPressed: () => _activate(MenuEntry.colorGreen),
+              shortcut: MenuEntry.colorGreen.shortcut,
+              child: Text(MenuEntry.colorGreen.label),
+            ),
+            MenuItemButton(
+              onPressed: () => _activate(MenuEntry.colorBlue),
+              shortcut: MenuEntry.colorBlue.shortcut,
+              child: Text(MenuEntry.colorBlue.label),
+            ),
+          ],
+          child: const Text('Background Color'),
+        ),
+      ],
     );
+    /*
+    return CascadingMenu(
+      alignmentOffset: Offset.zero,
+      clipBehavior: Clip.none,
+      menuPosition: widget.menuPosition,
+      orientation: Axis.vertical,
+      //tapRegionGroupId: EditableText,
+      menuChildren: <Widget>[
+        //Container(width: 100, height: 100, color: Colors.orange),
+        MenuItemButton(
+          child: Text(MenuEntry.about.label),
+          onPressed: () => _activate(MenuEntry.about),
+        ),
+        /*
+        if (_showingMessage)
+          MenuItemButton(
+            onPressed: () => _activate(MenuEntry.hideMessage),
+            shortcut: MenuEntry.hideMessage.shortcut,
+            child: Text(MenuEntry.hideMessage.label),
+          ),
+        if (!_showingMessage)
+        */
+          MenuItemButton(
+            onPressed: () => _activate(MenuEntry.showMessage),
+            shortcut: MenuEntry.showMessage.shortcut,
+            child: Text(MenuEntry.showMessage.label),
+          ),
+        SubmenuButton(
+          menuChildren: <Widget>[
+            MenuItemButton(
+              onPressed: () => _activate(MenuEntry.colorRed),
+              shortcut: MenuEntry.colorRed.shortcut,
+              child: Text(MenuEntry.colorRed.label),
+            ),
+            MenuItemButton(
+              onPressed: () => _activate(MenuEntry.colorGreen),
+              shortcut: MenuEntry.colorGreen.shortcut,
+              child: Text(MenuEntry.colorGreen.label),
+            ),
+            MenuItemButton(
+              onPressed: () => _activate(MenuEntry.colorBlue),
+              shortcut: MenuEntry.colorBlue.shortcut,
+              child: Text(MenuEntry.colorBlue.label),
+            ),
+          ],
+          child: const Text('Background Color'),
+        ),
+      ],
+      /*
+      menuChildren: <Widget>[
+        MenuItemButton(
+          child: Text(MenuEntry.about.label),
+          onPressed: () => {},
+        ),
+        /*
+        if (_showingMessage)
+          MenuItemButton(
+            onPressed: () => {},
+            shortcut: MenuEntry.hideMessage.shortcut,
+            child: Text(MenuEntry.hideMessage.label),
+          ),
+        if (!_showingMessage)
+        */
+          MenuItemButton(
+            onPressed: () => {},
+            shortcut: MenuEntry.showMessage.shortcut,
+            child: Text(MenuEntry.showMessage.label),
+          ),
+        SubmenuButton(
+          menuChildren: <Widget>[
+            MenuItemButton(
+              onPressed: () => {},
+              shortcut: MenuEntry.colorRed.shortcut,
+              child: Text(MenuEntry.colorRed.label),
+            ),
+            MenuItemButton(
+              onPressed: () => {},
+              shortcut: MenuEntry.colorGreen.shortcut,
+              child: Text(MenuEntry.colorGreen.label),
+            ),
+            MenuItemButton(
+              onPressed: () => {},
+              shortcut: MenuEntry.colorBlue.shortcut,
+              child: Text(MenuEntry.colorBlue.label),
+            ),
+          ],
+          child: const Text('Background Color'),
+        ),
+      ],
+      */
+    );
+    */
   }
 }
-
 
 
 
