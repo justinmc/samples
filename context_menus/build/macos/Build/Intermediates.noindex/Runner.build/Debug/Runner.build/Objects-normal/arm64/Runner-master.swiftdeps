@@ -1,0 +1,8 @@
+version: "Apple Swift version 5.7.1 (swiftlang-5.7.1.135.3 clang-1400.0.29.51)"
+options: "02773f35264c99a45a3fb22fbf37d18634b4123d77ed0881405999a2fb47ba7e"
+build_start_time: [1674069396, 48207044]
+build_end_time: [1674069399, 230812072]
+inputs:
+  "/Users/jmccandless/Projects/samples/experimental/context_menus/macos/Flutter/GeneratedPluginRegistrant.swift": [1674069382, 738208293]
+  "/Users/jmccandless/Projects/samples/experimental/context_menus/macos/Runner/AppDelegate.swift": [1673291115, 755242109]
+  "/Users/jmccandless/Projects/samples/experimental/context_menus/macos/Runner/MainFlutterWindow.swift": [1673291115, 757127523]
